@@ -1,34 +1,38 @@
-name: Build CBC School Assessment for Windows
+name: Build Windows Application
 
-on:
-workflow_dispatch:
-push:
-branches:
-- main
+'on':
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
-build-windows:
-runs-on: windows-latest
+  build:
+    name: Build CBC School Assessment
+    runs-on: windows-latest
 
-steps:
-  - name: Download project files
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-  - name: Install Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: 20
-      cache: npm
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-  - name: Install dependencies
-    run: npm install
+      - name: Install dependencies
+        run: npm install
 
-  - name: Build Windows installer
-    run: npm run build
+      - name: Build Windows executable
+        run: npm run build
 
-  - name: Upload installer
-    uses: actions/upload-artifact@v4
-    with:
-      name: CBC-School-Assessment-Windows-Installer
-      path: dist/*.exe
-      if-no-files-found: error
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: CBC-School-Assessment-Windows
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 7
