@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CBC school results analytics</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f4f6f3;--surface:#fff;--text:#1a2420;--muted:#5f6d66;--line:#dde4df;--accent:#0f6b4f;--on:#fff;--bad:#b3362b;--warn:#9a6a00;--ok:#1d7a4a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1512;--surface:#17211c;--text:#e8efea;--muted:#90a097;--line:#2a3831;--accent:#6fcfa5;--on:#0e1512;--bad:#f08a80;--warn:#e8c26a;--ok:#74d09b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1512;--surface:#17211c;--text:#e8efea;--muted:#90a097;--line:#2a3831;--accent:#6fcfa5;--on:#0e1512;--bad:#f08a80;--warn:#e8c26a;--ok:#74d09b;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:900px;margin:0 auto;padding:18px 14px 48px}
+h1{font:700 26px/1.2 Georgia,"Iowan Old Style",serif;margin:6px 0 2px}
+h2{font:700 18px/1.3 Georgia,serif;margin:22px 0 8px}
+.sub{margin:0 0 14px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+label{display:block;font-weight:600;font-size:14px;margin-bottom:5px}
+textarea,input{width:100%;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}
+textarea{min-height:130px;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-top:12px}
+.row>div{flex:1 1 180px}
+button{font:600 15px system-ui;border-radius:8px;padding:9px 15px;border:1px solid var(--accent);cursor:pointer;background:var(--accent);color:var(--on)}
+button.alt{background:transparent;color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.err{color:var(--bad);font-weight:600;margin-top:8px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:18px 0 4px;padding-bottom:4px}
+.tabs button{flex:none;background:transparent;color:var(--text);border-color:var(--line)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:620px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.stat b{display:block;font:700 24px/1.15 Georgia,serif}
+.stat span{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12.5px;color:var(--muted);font-weight:600}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+tr:last-child td{border:0}
+.bar{display:grid;gap:3px;margin:9px 0}
+.bar .t{display:flex;justify-content:space-between;font-size:14px;gap:8px}
+.trk{height:10px;background:var(--line);border-radius:5px;overflow:hidden;display:flex}
+.fill{background:var(--accent);height:100%}
+.d0{background:#2f8a5b}.d1{background:#7cc79b}.d2{background:#e8c26a}.d3{background:#d9625a}
+.leg{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--muted);margin-top:6px}
+.leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.msg{padding:10px 0;border-bottom:1px solid var(--line)}
+.msg:last-child{border:0}
+.msg p{margin:0 0 6px;font-size:14px}
+.msg button{padding:5px 11px;font-size:13px}
+.good{color:var(--ok)}.poor{color:var(--bad)}
+.sel{width:100%;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}
+.rf{background:#fff;color:#111;border:1px solid var(--line);border-radius:10px;padding:20px;margin:14px 0;font-size:14px}
+.rf h3{font:700 20px Georgia,serif;margin:0;text-align:center}
+.rf header p{text-align:center;margin:2px 0 12px;color:#444}
+.rfi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;margin:0 0 12px}
+.rfi div{border-bottom:1px solid #ccc}
+.rfi dt{font-size:12px;color:#555}.rfi dd{margin:0;font-weight:600}
+.rf table{border:1px solid #bbb}
+.rf th,.rf td{border:1px solid #ccc;padding:5px 7px;color:#111;white-space:normal;background:#fff}
+.rf th{background:#eee}
+.rf .hint{color:#444}
+.rf h4{margin:14px 0 4px;font-size:14px}
+.rem{border:1px dashed #aaa;border-radius:6px;padding:8px;min-height:44px}
+.sig{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px;font-size:13px}
+.sig div{border-top:1px solid #333;padding-top:4px}
+.pa-head{display:none}
+.brand{display:flex;align-items:center;gap:12px;margin:4px 0 8px}.brand img{flex:0 0 auto}.brand-n{font:700 18px/1.25 Georgia,serif}.brand-m{color:var(--muted);font-style:italic;font-size:14px}
+.rf header{display:flex;align-items:center;gap:14px;border-bottom:2px solid #111;margin-bottom:10px;padding-bottom:8px}.rf header img{width:72px;height:72px;flex:0 0 auto}.rf header .rh{flex:1;text-align:center}.rf header .mt{margin:0;font-style:italic;color:#444}.rf header .rh p{margin:2px 0 0}
+body.pa .pa-head{display:flex!important;align-items:center;gap:12px}body.pa .pa-head img{width:60px;height:60px}
+@media print{
+:root:root:root{--bg:#fff;--surface:#fff;--text:#000;--line:#bbb;--muted:#444;color-scheme:light}
+body{background:#fff}
+main{padding:0;max-width:none}
+main>h1,main>.sub,main>.panel,main>.brand,.tabs,.noprint{display:none!important}
+body:not(.pa) #out>section:not(#v-reports){display:none!important}
+@page{margin:12mm}
+body.pa #v-reports,body.pa #v-messages{display:none!important}
+body.pa #v-overview,body.pa #v-students,body.pa #v-subjects,body.pa #v-streams,body.pa #v-compare,body.pa #v-placement{display:block!important}
+body.pa .pa-head{display:block;border-bottom:2px solid #000;margin-bottom:8px;padding-bottom:6px}
+body.pa .pa-head h1{font:700 20px Georgia,serif;margin:0}
+body.pa .pa-head p{margin:2px 0 0;color:#444;font-size:12px}
+body.pa *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body.pa table{font-size:11px}
+body.pa td,body.pa th{white-space:normal;padding:4px 5px}
+body.pa .scroll{overflow:visible}
+body.pa tr,body.pa .bar,body.pa .stat{break-inside:avoid}
+body.pa h2{break-after:avoid;margin:14px 0 6px}
+.rf{border:0;border-radius:0;margin:0;padding:0;break-after:page}
+.rf:last-child{break-after:auto}
+}
+.sh input{width:100%;min-width:62px;font:inherit;font-size:14px;padding:6px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px}
+.sh td.n input{min-width:150px}
+.sh th{white-space:nowrap}.sh th input{min-width:110px;width:auto}
+.sh button{padding:2px 8px}
+.sh td,.sh th{padding:4px}
+</style>
+</head>
+<body>
+<main>
+<div class="brand"><img id="brand-logo" alt="School logo" width="64" height="64"><div><div class="brand-n">Springer Primary and Junior Secondary School</div><div class="brand-m">Hard Work Pays</div></div></div>
+<h1>CBC school results analytics</h1>
+<p class="sub">Paste Grade 1 to 9 marks to see achievement levels, learning area and stream analysis, KPSEA and KJSEA projections, report forms and parent messages.</p>
+
+<section class="panel">
+<div class="row" style="margin-top:0"><div><label for="school">School name</label><input id="school" value="Springer Primary and Junior Secondary School"></div><div><label for="grade">Grade</label><select id="grade" style="width:100%;font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px"><option>Grade 1</option><option>Grade 2</option><option>Grade 3</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option>Grade 7</option><option selected>Grade 8</option><option>Grade 9</option></select></div><div><label for="exam">Assessment</label><input id="exam" value="Term 2 Opener"></div></div><label style="margin:12px 0 0;font-weight:500"><input type="checkbox" id="rk" style="width:auto;margin-right:6px">Include class positions in messages and report forms</label><label style="display:block;margin:6px 0 0;font-weight:500"><input type="checkbox" id="bl" style="width:auto;margin-right:6px">Show 4 broad levels (EE, ME, AE, BE) instead of 8 (ticked automatically for Grades 1 to 3)</label><label style="display:block;margin:6px 0 0;font-weight:500"><input type="checkbox" id="sb-auto" style="width:auto;margin-right:6px">Fill missing SBA from the average of other saved assessments (marked * in Placement)</label><div class="row"><div><label for="sv-list">Saved assessments</label><select id="sv-list" class="sel"></select></div><div style="flex:0 0 auto"><button id="sv-save">Save this assessment</button></div><div style="flex:0 0 auto"><button class="alt" id="sv-open">Open</button></div><div style="flex:0 0 auto"><button class="alt" id="sv-del">Delete</button></div><div style="flex:0 0 auto"><button class="alt" id="sv-bak">Backup</button></div><div style="flex:0 0 auto"><button class="alt" id="sv-rst">Restore</button><input type="file" id="sv-file" accept=".json,application/json" hidden></div></div><p class="hint" id="sv-auto" hidden><span id="sv-auto-t"></span> <button class="alt" id="sv-folder" type="button">Open backup folder</button></p><p class="hint" id="sv-msg" role="status">Save each assessment to compare progress later. Learners are matched by name.</p>
+<label for="data" style="margin-top:12px">Marks (CSV or tab-separated, out of 100)</label>
+<textarea id="data" spellcheck="false" aria-describedby="h"></textarea>
+<p class="hint" id="h">Columns: Name, Stream, then one column per learning area (English, Kiswahili, Mathematics, Integrated Science, Social Studies, Pre-Technical Studies, Agriculture and so on). Leave a mark blank if the learner did not sit it. For the Grade 6 KPSEA projection add an SBA column (Grades 4 to 6 average). For the Grade 9 KJSEA projection add SBA (Grades 7 and 8 average) and KPSEA (Grade 6 score). All out of 100.</p>
+<div class="row"><div style="flex:0 0 auto"><button id="go">Analyze</button></div><div style="flex:0 0 auto"><button class="alt" id="sample">Load sample</button></div><div style="flex:0 0 auto"><button class="alt" id="sh-toggle">Marks sheet</button></div></div>
+<div id="sheet" hidden></div><div class="err" id="err" role="alert"></div>
+</section>
+
+<div id="out" hidden>
+<div class="pa-head" id="pahead"></div><div class="noprint" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center;margin-top:14px"><select id="ex-what" class="sel" style="width:auto" aria-label="What to export"><option value="learners">Learner results</option><option value="areas">Learning area summary</option><option value="streams">Stream summary</option><option value="compare">Assessment comparison</option></select><button id="ex-csv">Export CSV</button><button class="alt" id="ex-copy">Copy CSV</button><button class="alt" id="pa-print">Print analysis</button><span id="ex-msg" class="hint" role="status" style="width:100%;text-align:right;margin:0"></span></div>
+<div class="tabs" role="tablist" id="tabs"></div>
+<section id="v-overview"></section>
+<section id="v-students" hidden></section>
+<section id="v-subjects" hidden></section>
+<section id="v-streams" hidden></section>
+<section id="v-compare" hidden></section>
+<section id="v-placement" hidden></section>
+<section id="v-reports" hidden></section>
+<section id="v-messages" hidden></section>
+</div>
+</main>
+<script>
+const SCHOOL_NAME="Springer Primary and Junior Secondary School",MOTTO="Hard Work Pays",LOGO="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+CjxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMjUyIiBmaWxsPSIjMGY2YjRmIi8+CjxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMjQ0IiBmaWxsPSJub25lIiBzdHJva2U9IiNlMGIyM2EiIHN0cm9rZS13aWR0aD0iNiIvPgo8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjE1MCIgZmlsbD0iI2Y3ZjNlNiIgc3Ryb2tlPSIjZTBiMjNhIiBzdHJva2Utd2lkdGg9IjUiLz4KPGRlZnM+PHBhdGggaWQ9ImFyYyIgZD0iTTkzLjIgMzUwLjAgQTE4OCAxODggMCAxIDEgNDE4LjggMzUwLjAiLz48L2RlZnM+Cjx0ZXh0IGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCAnVGltZXMgTmV3IFJvbWFuJywgc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMjUiIGZpbGw9IiNmZmZmZmYiIGxldHRlci1zcGFjaW5nPSIxLjUiPjx0ZXh0UGF0aCBocmVmPSIjYXJjIiBzdGFydE9mZnNldD0iNTAlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB0ZXh0TGVuZ3RoPSI3MzAiIGxlbmd0aEFkanVzdD0ic3BhY2luZyI+U1BSSU5HRVIgUFJJTUFSWSBBTkQgSlVOSU9SIFNFQ09OREFSWSBTQ0hPT0w8L3RleHRQYXRoPjwvdGV4dD4KPGNpcmNsZSBjeD0iOTguNyIgY3k9IjM3NC42IiByPSI2IiBmaWxsPSIjZTBiMjNhIi8+PGNpcmNsZSBjeD0iNDEzLjMiIGN5PSIzNzQuNiIgcj0iNiIgZmlsbD0iI2UwYjIzYSIvPgoKPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjEyIiByPSI3OCIgZmlsbD0iI2Y2ZDU3YSIgb3BhY2l0eT0iLjU1Ii8+CjxwYXRoIGQ9Ik0yNTYgMzA1IEwyNTYgMTk2IiBzdHJva2U9IiMyZThiNTciIHN0cm9rZS13aWR0aD0iOSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxwYXRoIGQ9Ik0yNTYgMjUwIEMyMTQgMjUyIDE5MiAyMjIgMTk3IDE4NCBDMjM2IDE4NCAyNTkgMjE0IDI1NiAyNTAgWiIgZmlsbD0iIzNhYTU2YSIvPgo8cGF0aCBkPSJNMjU2IDI1MCBDMjk4IDI1MiAzMjAgMjIyIDMxNSAxODQgQzI3NiAxODQgMjUzIDIxNCAyNTYgMjUwIFoiIGZpbGw9IiMyZThiNTciLz4KPHBhdGggZD0iTTI1NiAyMTIgQzIzOCAxOTYgMjQwIDE2NCAyNTYgMTM4IEMyNzIgMTY0IDI3NCAxOTYgMjU2IDIxMiBaIiBmaWxsPSIjNGZiZjgwIi8+CjxwYXRoIGQ9Ik0yNTYgMzEyIFEyMDQgMjkyIDE1MCAzMDIgTDE1MCAzNTIgUTIwNCAzNDIgMjU2IDM2MiBaIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMwZjZiNGYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8cGF0aCBkPSJNMjU2IDMxMiBRMzA4IDI5MiAzNjIgMzAyIEwzNjIgMzUyIFEzMDggMzQyIDI1NiAzNjIgWiIgZmlsbD0iI2ZiZmFmMyIgc3Ryb2tlPSIjMGY2YjRmIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHBhdGggZD0iTTI1NiAzMTIgTDI1NiAzNjIiIHN0cm9rZT0iIzBmNmI0ZiIgc3Ryb2tlLXdpZHRoPSI1Ii8+CjxwYXRoIGQ9Ik0xNzIgMzE4IFEyMTAgMzEwIDI0MiAzMjIgTTE3MiAzMzIgUTIxMCAzMjQgMjQyIDMzNiBNMjcwIDMyMiBRMzAyIDMxMCAzNDAgMzE4IE0yNzAgMzM2IFEzMDIgMzI0IDM0MCAzMzIiIHN0cm9rZT0iIzljYzliMyIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KCjxwYXRoIGQ9Ik05NiAzOTIgTDEyOCAzOTIgTDEyOCAzODIgTDM4NCAzODIgTDM4NCAzOTIgTDQxNiAzOTIgTDM5NiA0MTIgTDQxNiA0MzIgTDM4NCA0MzIgTDM4NCA0NDIgTDEyOCA0NDIgTDEyOCA0MzIgTDk2IDQzMiBMMTE2IDQxMiBaIiBmaWxsPSIjZTBiMjNhIiBzdHJva2U9IiM5YTZhMDAiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8dGV4dCB4PSIyNTYiIHk9IjQyMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsICdUaW1lcyBOZXcgUm9tYW4nLCBzZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCIgZm9udC1zaXplPSIyNyIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiMwYjNmMmYiPkhBUkQgV09SSyBQQVlTPC90ZXh0Pgo8L3N2Zz4=";
+const KV={get(k){try{if(window.nativeStore){const v=window.nativeStore.get(k);if(v!=null)return v}return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{if(window.nativeStore)window.nativeStore.set(k,v);else localStorage.setItem(k,v)}catch(e){}}};
+const SAMPLE=`Name,Stream,English,Kiswahili,Mathematics,Integrated Science,Social Studies,Pre-Technical Studies,Agriculture,SBA,KPSEA
+Achieng Otieno,Blue,78,72,85,81,69,74,80,76,70
+Brian Kamau,Blue,64,58,49,55,62,51,57,55,52
+Cynthia Wanjiru,Blue,92,88,94,90,85,91,89,90,88
+David Mutiso,Blue,45,52,38,44,50,41,47,48,45
+Esther Njeri,Blue,71,66,74,70,73,68,72,70,68
+Farouk Hassan,Green,59,64,67,61,55,,63,60,
+Grace Atieno,Green,83,79,70,76,80,77,74,78,74
+Hillary Kiprop,Green,38,44,29,35,42,33,40,40,36
+Irene Chebet,Green,67,70,62,68,71,64,69,68,66
+James Omondi,Green,74,62,80,73,60,78,66,72,70
+Kevin Mwangi,Green,28,35,22,30,36,25,31,33,30
+Lucy Wambui,Blue,91,86,88,90,83,87,92,88,90`;
+const SAMPLE_P=`Name,Stream,English,Kiswahili,Mathematics,Science and Technology,Social Studies,Agriculture and Nutrition,Creative Arts,SBA
+Amina Said,Red,82,76,88,80,74,79,85,81
+Baraka Mwita,Red,61,55,58,52,60,57,66,59
+Charity Wafula,Red,90,92,95,91,88,93,89,92
+Daniel Kiptoo,Red,42,48,35,40,45,38,52,44
+Eunice Moraa,Red,68,72,64,70,66,69,74,69
+Felix Juma,Yellow,55,60,51,49,58,,62,54
+Gladys Akinyi,Yellow,77,70,73,75,72,68,80,74
+Humphrey Njoroge,Yellow,36,40,28,33,39,31,44,35
+Imani Ochieng,Yellow,64,66,60,63,67,62,70,65
+Joy Wairimu,Yellow,85,81,90,84,79,86,88,86`;
+const SAMPLE_L=`Name,Stream,Mathematical Activities,English Language Activities,Kiswahili Language Activities,Environmental Activities,Religious Activities,Creative Activities
+Mia Wekesa,A,88,84,80,86,92,90
+Noah Kiplagat,A,64,58,62,66,70,72
+Olivia Njuguna,A,76,80,72,78,85,82
+Peter Odhiambo,A,41,38,44,46,55,60
+Queen Mutheu,B,92,95,90,88,94,96
+Ryan Barasa,B,53,49,57,52,63,68
+Sofia Naliaka,B,70,66,74,72,78,75
+Tito Lekishon,B,30,34,28,35,48,52`;
+const GR=[[90,"EE1",8,"Exceptional"],[75,"EE2",7,"Very Good"],[58,"ME1",6,"Good"],[41,"ME2",5,"Fair"],[31,"AE1",4,"Needs Improvement"],[21,"AE2",3,"Below Average"],[11,"BE1",2,"Well Below Average"],[0,"BE2",1,"Minimal"]];
+const gr=m=>{m=Math.round(m);const g=GR.find(g=>m>=g[0]);return $("bl")&&$("bl").checked?[g[0],g[1].slice(0,2),g[2],g[3]]:g};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const f1=n=>n.toFixed(1);
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+function rank(list,key){const s=[...list].sort((a,b)=>b[key]-a[key]);list.forEach(x=>x["r_"+key]=s.findIndex(y=>y[key]===x[key])+1)}
+// Parse quoted CSV safely, or tab-separated data pasted from spreadsheets.
+function readDelimited(text){
+  const source=String(text??"").replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n");
+  const first=(source.split("\n").find(x=>x.trim())||"");
+  const delimiter=first.includes("\t")?"\t":",";
+  const rows=[];let row=[],field="",quoted=false;
+  for(let i=0;i<source.length;i++){
+    const c=source[i];
+    if(quoted){if(c==='"'&&source[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c;}
+    else if(c==='"'&&field.length===0)quoted=true;
+    else if(c===delimiter){row.push(field.trim());field="";}
+    else if(c==="\n"){row.push(field.trim());if(row.some(x=>x!==""))rows.push(row);row=[];field="";}
+    else field+=c;
+  }
+  if(quoted)throw new Error("The imported file has an unclosed quotation mark. Check the CSV file and try again.");
+  if(field!==""||row.length){row.push(field.trim());if(row.some(x=>x!==""))rows.push(row)}
+  return rows;
+}
+function strictMark(value,label){
+  const x=String(value??"").trim();if(x==="")return null;
+  if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(x))throw new Error(label+': "'+x+'" is not a valid number. Enter a mark from 0 to 100 or leave it blank.');
+  const n=Number(x);if(!Number.isFinite(n)||n<0||n>100)throw new Error(label+': "'+x+'" is outside the permitted range of 0 to 100. Correct the mark and try again.');
+  return n;
+}
+function parse(t){
+  const rows=readDelimited(t);
+  if(rows.length<2||rows[0].length<3)throw new Error("Add a header row with Name, Stream and at least one subject, then at least one student row.");
+  const hdr=rows[0],sbaI=hdr.findIndex(h=>/^sba$/i.test(h)),kpI=hdr.findIndex(h=>/^kpsea$/i.test(h));
+  if(!/^name$/i.test(hdr[0])||!/^stream$/i.test(hdr[1]))throw new Error("The first two column headings must be Name and Stream.");
+  const cols=hdr.map((_,i)=>i).filter(i=>i>=2&&i!==sbaI&&i!==kpI);
+  if(!cols.length||cols.some(i=>!hdr[i]))throw new Error("Every learning area must have a heading.");
+  const seen=new Set(),subs=cols.map(i=>hdr[i]);
+  const st=rows.slice(1).map((r,ri)=>{
+    const line=ri+2,name=(r[0]||"").trim();
+    if(!name)throw new Error("Row "+line+" has no learner name. Add the name or remove the empty row.");
+    const marks=cols.map((i,j)=>strictMark(r[i],`Row ${line}, ${name}, ${subs[j]}`));
+    const sba=sbaI>-1?strictMark(r[sbaI],`Row ${line}, ${name}, SBA`):null;
+    const kp=kpI>-1?strictMark(r[kpI],`Row ${line}, ${name}, KPSEA`):null;
+    const key=name.toLocaleLowerCase().replace(/\s+/g," ");
+    if(seen.has(key))throw new Error(`Duplicate learner name "${name}" at row ${line}. Correct the duplicate before analysis.`);
+    seen.add(key);const v=marks.filter(x=>x!==null);
+    return{name,stream:(r[1]||"-").trim()||"-",marks,total:v.reduce((a,b)=>a+b,0),mean:avg(v),n:v.length,pts:v.reduce((a,b)=>a+gr(b)[2],0),sba,kp};
+  }).filter(s=>s.n>0);
+  if(!st.length)throw new Error("No marks found. Enter at least one valid mark.");
+  rank(st,"total");
+  [...new Set(st.map(s=>s.stream))].forEach(k=>rank(st.filter(s=>s.stream===k),"total"));
+  st.forEach(s=>{const v=s.marks.map((m,i)=>[m,i]).filter(x=>x[0]!==null).sort((a,b)=>b[0]-a[0]);s.best=subs[v[0][1]];s.worst=subs[v[v.length-1][1]];s.g=gr(s.mean);s.fin=gradeNum()===6?(s.sba!==null?0.4*s.mean+0.6*s.sba:null):(gradeNum()>=7&&s.sba!==null&&s.kp!==null?0.6*s.mean+0.2*s.sba+0.2*s.kp:null);s.fg=s.fin===null?null:gr(s.fin)});
+  return{subs,st};
+}
+function dist(v){const c=[0,0,0,0];v.forEach(m=>{c["EMAB".indexOf(gr(m)[1][0])]++});return c}
+function distBar(c,n){return'<div class="trk">'+c.map((x,i)=>x?`<div class="d${i}" style="width:${x/n*100}%" title="${["EE","ME","AE","BE"][i]}: ${x}"></div>`:"").join("")+"</div>"}
+const LEG='<div class="leg">'+["EE","ME","AE","BE"].map((l,i)=>`<span><i class="d${i}"></i>${l}</span>`).join("")+"</div>";
+let D;
+function analyze(){
+  $("err").textContent="";
+  KV.set("ra-data-jss2",$("data").value)
+  try{D=parse($("data").value)}catch(e){$("err").textContent=e.message;$("out").hidden=true;return}
+  fillSba();SER=series();const{subs,st}=D,n=st.length;
+  const ss=subs.map((name,i)=>{const v=st.map(s=>s.marks[i]).filter(x=>x!==null);return{name,n:v.length,mean:avg(v),hi:Math.max(...v),lo:Math.min(...v),pass:v.filter(x=>x>=41).length/v.length,d:dist(v)}}).sort((a,b)=>b.mean-a.mean);
+  const streams=[...new Set(st.map(s=>s.stream))].map(k=>{const m=st.filter(s=>s.stream===k);return{k,n:m.length,mean:avg(m.map(s=>s.mean)),top:[...m].sort((a,b)=>b.total-a.total)[0],d:dist(m.map(s=>s.mean))}}).sort((a,b)=>b.mean-a.mean);
+  const byRank=[...st].sort((a,b)=>b.total-a.total);
+  const dm=avg(st.map(s=>s.mean));
+  // overview
+  $("v-overview").innerHTML=`<div class="stats"><div class="stat"><b>${f1(dm)}</b><span>Mean score, level ${gr(dm)[1]}</span></div><div class="stat"><b>${n}</b><span>Students</span></div><div class="stat"><b>${esc(ss[0].name)}</b><span>Best subject (${f1(ss[0].mean)})</span></div><div class="stat"><b>${esc(ss[ss.length-1].name)}</b><span>Weakest subject (${f1(ss[ss.length-1].mean)})</span></div></div>
+<h2>Top 5 students</h2><div class="scroll"><table><tr><th>Pos</th><th class="l">Name</th><th class="l">Stream</th><th>Mean</th><th>Level</th></tr>${byRank.slice(0,5).map(s=>`<tr><td>${s.r_total}</td><td class="l">${esc(s.name)}</td><td class="l">${esc(s.stream)}</td><td>${f1(s.mean)}</td><td>${s.g[1]}</td></tr>`).join("")}</table></div>
+<h2>Students needing support</h2><div class="scroll"><table><tr><th class="l">Name</th><th class="l">Stream</th><th>Mean</th><th class="l">Weakest</th></tr>${[...byRank].reverse().slice(0,5).map(s=>`<tr><td class="l">${esc(s.name)}</td><td class="l">${esc(s.stream)}</td><td class="poor">${f1(s.mean)}</td><td class="l">${esc(s.worst)}</td></tr>`).join("")}</table></div>
+<h2>Achievement levels by learning area</h2>${ss.map(s=>`<div class="bar"><div class="t"><span>${esc(s.name)}</span><span>${f1(s.mean)}</span></div>${distBar(s.d,s.n)}</div>`).join("")}${LEG}`;
+  // students
+  $("v-students").innerHTML=`<h2>Student rankings</h2><div class="scroll"><table><tr><th>Pos</th><th class="l">Name</th><th class="l">Stream</th>${subs.map(s=>`<th>${esc(s)}</th>`).join("")}<th>Total</th><th>Mean</th><th>Level</th><th>Points</th><th>Stream pos</th></tr>${byRank.map(s=>`<tr><td>${s.r_total}</td><td class="l">${esc(s.name)}</td><td class="l">${esc(s.stream)}</td>${s.marks.map(m=>`<td>${m===null?"–":m}</td>`).join("")}<td>${s.total}</td><td>${f1(s.mean)}</td><td>${s.g[1]}</td><td>${s.pts}</td><td>${streamPos(s)}</td></tr>`).join("")}</table></div>`;
+  // subjects
+  $("v-subjects").innerHTML=`<h2>Learning area analysis</h2><div class="scroll"><table><tr><th class="l">Learning area</th><th>Mean</th><th>Level</th><th>High</th><th>Low</th><th>Meeting+ %</th></tr>${ss.map(s=>`<tr><td class="l">${esc(s.name)}</td><td>${f1(s.mean)}</td><td>${gr(s.mean)[1]}</td><td>${s.hi}</td><td>${s.lo}</td><td class="${s.pass<.5?"poor":""}">${Math.round(s.pass*100)}%</td></tr>`).join("")}</table></div><p class="hint">Meeting+ counts learners at ME2 or above (41 and over).</p><h2>Mean score by subject</h2>${ss.map(s=>`<div class="bar"><div class="t"><span>${esc(s.name)}</span><span>${f1(s.mean)}</span></div><div class="trk"><div class="fill" style="width:${s.mean}%"></div></div></div>`).join("")}`;
+  // streams
+  $("v-streams").innerHTML=`<h2>Stream comparison</h2><div class="scroll"><table><tr><th class="l">Stream</th><th>Learners</th><th>Mean</th><th>Level</th><th class="l">Top student</th></tr>${streams.map(s=>`<tr><td class="l">${esc(s.k)}</td><td>${s.n}</td><td>${f1(s.mean)}</td><td>${gr(s.mean)[1]}</td><td class="l">${esc(s.top.name)}</td></tr>`).join("")}</table></div><h2>Achievement levels by stream</h2>${streams.map(s=>`<div class="bar"><div class="t"><span>${esc(s.k)}</span><span>${f1(s.mean)}</span></div>${distBar(s.d,s.n)}</div>`).join("")}${LEG}`;
+  // messages
+  const mk=s=>`Dear Parent, ${$("school").value||"School"} ${$("grade").value} ${$("exam").value||"assessment"} results for ${s.name}: mean ${f1(s.mean)}, achievement level ${s.g[1]} (${s.g[3]}), ${s.pts} points from ${s.n} learning areas.${$("rk").checked?` Position ${streamPos(s)} in ${s.stream}, ${s.r_total} of ${n} overall.`:""} Strongest in ${s.best}; please support ${s.worst}.`;
+  window.MSG=byRank.map(mk);
+  $("v-messages").innerHTML=`<h2>Parent messages</h2><button id="cpall">Copy all messages</button>${byRank.map((s,i)=>`<div class="msg"><p><b>${esc(s.name)}</b><br>${esc(MSG[i])}</p><button class="alt" data-i="${i}">Copy</button></div>`).join("")}`;
+  $("cpall").onclick=e=>cp(MSG.join("\n\n"),e.target);
+  document.querySelectorAll(".msg button").forEach(b=>b.onclick=()=>cp(MSG[b.dataset.i],b));
+  const pl=st.filter(s=>s.fin!==null).sort((a,b)=>b.fin-a.fin),mis=st.filter(s=>s.fin===null);
+  $("v-placement").innerHTML=`<h2>Senior school placement projection</h2><p class="hint" style="margin:0 0 10px">Final score = 60% Grade 9 assessment + 20% school-based assessment (Grades 7 and 8) + 20% KPSEA (Grade 6). The Grade 9 part here is this assessment's mean, so read the result as a projection. KNEC does not publish real percentage marks.</p>`+(pl.length?`<div class="stats"><div class="stat"><b>${f1(avg(pl.map(s=>s.fin)))}</b><span>Mean projected final, level ${gr(avg(pl.map(s=>s.fin)))[1]}</span></div><div class="stat"><b>${pl.filter(s=>s.fg[2]>=5).length}</b><span>Projected at ME2 or above</span></div><div class="stat"><b>${pl.filter(s=>s.fg[2]<=4).length}</b><span>Projected below ME2</span></div><div class="stat"><b>${mis.length}</b><span>Missing SBA or KPSEA</span></div></div><h2>Projected final by learner</h2><div class="scroll"><table><tr><th class="l">Name</th><th class="l">Stream</th><th>This exam (60%)</th><th>SBA (20%)</th><th>KPSEA (20%)</th><th>Final</th><th>Level</th><th>Points</th></tr>${pl.map(s=>`<tr><td class="l">${esc(s.name)}</td><td class="l">${esc(s.stream)}</td><td>${f1(s.mean)}</td><td>${s.sba}${s.sbaAuto?"*":""}</td><td>${s.kp}</td><td><b>${f1(s.fin)}</b></td><td>${s.fg[1]}</td><td>${s.fg[2]}</td></tr>`).join("")}</table></div>`:`<div class="panel">Add SBA and KPSEA columns (marks out of 100) to your data to see the projection.</div>`)+(pl.length&&mis.length?`<p class="hint">Missing SBA or KPSEA: ${mis.map(s=>esc(s.name)).join(", ")}. Learners who missed KPSEA sit the Qualifying Test.</p>`:"");
+  const gn=gradeNum();
+  if(gn<=6){
+    const p6=gn===6?st.filter(s=>s.fin!==null).sort((a,b)=>b.fin-a.fin):[],m6=gn===6?st.filter(s=>s.fin===null):[];
+    $("v-placement").innerHTML=gn<6?`<h2>National assessments</h2><div class="panel">National assessment weighting applies at Grade 6 (KPSEA) and Grade 9 (KJSEA). Choose one of those grades to see a projection. For this grade, use the Students, Learning areas and Reports tabs.</div>`:`<h2>KPSEA projection</h2><p class="hint" style="margin:0 0 10px">KPSEA final score = 40% Grade 6 national assessment + 60% school-based assessment (Grades 4 to 6). The national part here is this assessment's mean, so read the result as a projection.</p>`+(p6.length?`<div class="stats"><div class="stat"><b>${f1(avg(p6.map(s=>s.fin)))}</b><span>Mean projected final, level ${gr(avg(p6.map(s=>s.fin)))[1]}</span></div><div class="stat"><b>${p6.filter(s=>s.fg[2]>=5).length}</b><span>Projected at ME2 or above</span></div><div class="stat"><b>${p6.filter(s=>s.fg[2]<=4).length}</b><span>Projected below ME2</span></div><div class="stat"><b>${m6.length}</b><span>Missing SBA</span></div></div><h2>Projected final by learner</h2><div class="scroll"><table><tr><th class="l">Name</th><th class="l">Stream</th><th>This exam (40%)</th><th>SBA (60%)</th><th>Final</th><th>Level</th><th>Points</th></tr>${p6.map(s=>`<tr><td class="l">${esc(s.name)}</td><td class="l">${esc(s.stream)}</td><td>${f1(s.mean)}</td><td>${s.sba}${s.sbaAuto?"*":""}</td><td><b>${f1(s.fin)}</b></td><td>${s.fg[1]}</td><td>${s.fg[2]}</td></tr>`).join("")}</table></div>`:`<div class="panel">Add an SBA column (Grades 4 to 6 average, out of 100) to see the projection.</div>`)+(p6.length&&m6.length?`<p class="hint">Missing SBA: ${m6.map(s=>esc(s.name)).join(", ")}.</p>`:"");
+  }
+  renderStore();renderCompare();
+  buildReports();
+  $("out").hidden=false;
+  tabs();
+}
+function streamPos(s){const m=D.st.filter(x=>x.stream===s.stream);return(m.filter(x=>x.total>s.total).length+1)+"/"+m.length}
+function cp(t,b){const o=b.textContent;const done=()=>{b.textContent="Copied";setTimeout(()=>b.textContent=o,1500)};
+  try{navigator.clipboard.writeText(t).then(done,()=>fb(t,done))}catch(e){fb(t,done)}}
+function fb(t,done){const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy")}catch(e){}a.remove();done()}
+const T=[["overview","Overview"],["students","Students"],["subjects","Subjects"],["streams","Streams"],["compare","Compare"],["placement","Placement"],["reports","Reports"],["messages","Messages"]];
+function tabs(cur){cur=cur||"overview";
+  $("tabs").innerHTML=T.map(t=>`<button role="tab" aria-selected="${t[0]===cur}" data-t="${t[0]}">${t[1]}</button>`).join("");
+  T.forEach(t=>$("v-"+t[0]).hidden=t[0]!==cur);
+  $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>tabs(b.dataset.t));
+}
+function buildReports(){
+  if(!$("rp-who")){
+    $("v-reports").innerHTML=`<h2 class="noprint">Report forms</h2><div class="panel noprint"><div class="row" style="margin-top:0"><div><label for="rp-who">Learner</label><select id="rp-who" class="sel"></select></div><div><label for="rp-term">Term and year</label><input id="rp-term" value="Term 2, 2026"></div></div><div class="row"><div><label for="rp-ct">Class teacher</label><input id="rp-ct"></div><div><label for="rp-pr">Principal</label><input id="rp-pr"></div><div><label for="rp-nx">Next term opens</label><input id="rp-nx"></div></div><div class="row"><div style="flex:0 0 auto"><button id="rp-print">Print or save as PDF</button></div></div><p class="hint">Remarks on each form are editable before you print. Choose All learners to print every form, one per page. If nothing happens, open the page in its own browser tab and use Print there.</p></div><div id="rp-out"></div>`;
+    ["rp-who","rp-term","rp-ct","rp-pr","rp-nx"].forEach(i=>$(i).oninput=renderReports);
+    $("rp-print").onclick=()=>{try{window.print()}catch(e){}};
+  }
+  const cur=$("rp-who").value;
+  $("rp-who").innerHTML='<option value="all">All learners</option>'+D.st.map((s,i)=>({s,i})).sort((a,b)=>a.s.name.localeCompare(b.s.name)).map(o=>`<option value="${o.i}">${esc(o.s.name)}</option>`).join("");
+  $("rp-who").value=cur&&$("rp-who").querySelector(`option[value="${cur}"]`)?cur:"all";
+  renderReports();
+}
+function renderReports(){
+  if(!D||!$("rp-out"))return;
+  const w=$("rp-who").value,n=D.st.length;
+  const list=w==="all"?[...D.st].sort((a,b)=>a.name.localeCompare(b.name)):[D.st[+w]];
+  const cm=D.subs.map((_,i)=>avg(D.st.map(s=>s.marks[i]).filter(x=>x!==null)));
+  const sch=esc($("school").value||"School"),gd=esc($("grade").value),ex=esc($("exam").value||"Assessment"),tm=esc($("rp-term").value),ct=esc($("rp-ct").value),pr=esc($("rp-pr").value),nx=esc($("rp-nx").value);
+  const cmt=l=>l>=7?"Excellent work. Keep stretching yourself.":l>=5?"Meeting expectations. Aim for steady improvement.":l>=3?"Approaching expectations. More practice needed.":"Needs close support and regular practice.";
+  const pr2=l=>l>=7?"An outstanding result. Keep it up.":l>=5?"A good result. Keep working steadily.":l>=3?"There is room to grow. Extra support at home and school will help.":"Needs close support. Please meet the class teacher.";
+  $("rp-out").innerHTML=list.map(s=>{
+    const first=esc(s.name.split(" ")[0]);
+    return `<article class="rf"><header><img src="${LOGO}" alt=""><div class="rh"><h3>${sch}</h3><p class="mt">${MOTTO}</p><p>Learner progress report · ${gd} · ${ex} · ${tm}</p></div></header><dl class="rfi"><div><dt>Learner</dt><dd>${esc(s.name)}</dd></div><div><dt>Stream</dt><dd>${esc(s.stream)}</dd></div><div><dt>Overall level</dt><dd>${s.g[1]} (${s.g[3]})</dd></div>${$("rk").checked?`<div><dt>Position</dt><dd>${streamPos(s)} in stream, ${s.r_total} of ${n}</dd></div>`:""}</dl><table><tr><th class="l">Learning area</th><th>Marks</th><th>Class mean</th><th>Level</th><th>Points</th><th class="l">Comment</th></tr>${D.subs.map((a,i)=>{const m=s.marks[i];if(m===null)return`<tr><td class="l">${esc(a)}</td><td>–</td><td>${f1(cm[i])}</td><td>–</td><td>–</td><td class="l">Not assessed</td></tr>`;const g=gr(m);return`<tr><td class="l">${esc(a)}</td><td>${m}</td><td>${f1(cm[i])}</td><td>${g[1]}</td><td>${g[2]}</td><td class="l">${cmt(g[2])}</td></tr>`}).join("")}<tr><td class="l"><b>Overall</b></td><td><b>${s.total}</b></td><td></td><td><b>${s.g[1]}</b></td><td><b>${s.pts}/${s.n*8}</b></td><td class="l">Mean ${f1(s.mean)}</td></tr></table>${s.fin!==null?`<p class="hint">Projected placement score: <b>${f1(s.fin)}</b> (${s.fg[1]}, ${s.fg[3]}), from ${gradeNum()===6?"40% this assessment and 60% SBA":"60% this assessment, 20% SBA and 20% KPSEA"}.</p>`:""}${progressHtml(s)}<h4>Class teacher's remarks</h4><div class="rem" contenteditable="true">${first} is working at level ${s.g[1]} (${s.g[3]}). Strongest in ${esc(s.best)}; needs more support in ${esc(s.worst)}.</div><h4>Principal's remarks</h4><div class="rem" contenteditable="true">${pr2(s.g[2])}</div><div class="sig"><div>Class teacher${ct?": "+ct:""}</div><div>Principal${pr?": "+pr:""}</div><div>Parent or guardian</div></div>${nx?`<p class="hint">Next term opens: ${nx}</p>`:""}</article>`;
+  }).join("");
+}
+const gradeNum=()=>+$("grade").value.replace(/\D/g,"");
+$("bl").onchange=analyze;
+let MEM=null,SER=null,delArm=0;
+const curKey=()=>$("grade").value+"|"+($("exam").value||"").trim();
+function store(){if(!MEM){try{MEM=JSON.parse(KV.get("ra-store")||"[]")}catch(e){}if(!Array.isArray(MEM))MEM=[]}return MEM}
+const persist=()=>{KV.set("ra-store",JSON.stringify(MEM))};
+const smsg=t=>{$("sv-msg").textContent=t};
+const calcFin=s=>{const g=gradeNum();s.fin=g===6?(s.sba!==null?0.4*s.mean+0.6*s.sba:null):(g>=7&&s.sba!==null&&s.kp!==null?0.6*s.mean+0.2*s.sba+0.2*s.kp:null);s.fg=s.fin===null?null:gr(s.fin)};
+function renderStore(){const s=store(),el=$("sv-list"),cur=el.value;el.innerHTML=s.length?s.map(a=>`<option value="${esc(a.key)}">${esc(a.grade)} · ${esc(a.name)}</option>`).join(""):'<option value="">None saved yet</option>';if(s.some(a=>a.key===cur))el.value=cur}
+function series(){const key=curKey(),out=[];let seen=false;store().forEach(a=>{if(a.key===key){seen=true;out.push({key:a.key,name:a.name,grade:a.grade,d:D});return}try{out.push({key:a.key,name:a.name,grade:a.grade,d:parse(a.data)})}catch(e){}});if(!seen)out.push({key,name:($("exam").value||"").trim()||"Current",grade:$("grade").value,d:D});return out}
+function fillSba(){if(!$("sb-auto").checked)return;const key=curKey(),h={};store().forEach(a=>{if(a.key===key)return;try{parse(a.data).st.forEach(s=>{const k=s.name.toLowerCase();(h[k]=h[k]||[]).push(s.mean)})}catch(e){}});D.st.forEach(s=>{const v=h[s.name.toLowerCase()];if(s.sba===null&&v&&v.length){s.sba=Math.round(avg(v)*10)/10;s.sbaAuto=true;calcFin(s)}})}
+function cmp(){const S=SER,names=[],seen={};S.forEach(x=>x.d.st.forEach(s=>{const k=s.name.toLowerCase();if(!seen[k]){seen[k]=1;names.push({k,n:s.name})}}));const rows=names.map(o=>{const m=S.map(x=>{const s=x.d.st.find(t=>t.name.toLowerCase()===o.k);return s?s.mean:null}),v=m.filter(x=>x!==null);return{n:o.n,m,ch:v.length>1?v[v.length-1]-v[0]:null}});return{S,rows}}
+function renderCompare(){
+  const el=$("v-compare");
+  if(SER.length<2){el.innerHTML='<h2>Compare assessments</h2><div class="panel">Save at least two assessments (use Save this assessment above) to compare progress. Learners are matched by name.</div>';return}
+  const{S,rows}=cmp(),lab=x=>esc(x.name)+" · "+esc(x.grade.replace("Grade ","G")),cell=v=>`<td>${v===null?"–":f1(v)}</td>`;
+  const ar=c=>c===null?"–":Math.abs(c)<0.5?"=":c>0?"▲ +"+f1(c):"▼ "+f1(c);
+  const rk=rows.filter(r=>r.ch!==null).sort((a,b)=>b.ch-a.ch),fm=r=>esc(r.n)+" ("+(r.ch>0?"+":"")+f1(r.ch)+")";
+  const up=rk.filter(r=>r.ch>=0.5).slice(0,3),dn=[...rk].reverse().filter(r=>r.ch<=-0.5).slice(0,3);
+  const areas=[...new Set(S.flatMap(x=>x.d.subs))],strs=[...new Set(S.flatMap(x=>x.d.st.map(s=>s.stream)))];
+  const am=(x,a)=>{const i=x.d.subs.indexOf(a);if(i<0)return null;const v=x.d.st.map(s=>s.marks[i]).filter(z=>z!==null);return v.length?avg(v):null};
+  const sm=(x,k)=>{const m=x.d.st.filter(s=>s.stream===k);return m.length?avg(m.map(s=>s.mean)):null};
+  const hd=S.map(x=>`<th>${lab(x)}</th>`).join("");
+  el.innerHTML=`<h2>Progress across ${S.length} assessments</h2><p class="hint" style="margin:0 0 8px">Shown in the order you saved them. Change compares each learner's first and last result.</p><p><b>Most improved:</b> ${up.length?up.map(fm).join(", "):"none yet"}</p><p><b>Biggest drop:</b> ${dn.length?dn.map(fm).join(", "):"none"}</p><h2>Learner mean score</h2><div class="scroll"><table><tr><th class="l">Name</th>${hd}<th>Change</th></tr>${rows.map(r=>`<tr><td class="l">${esc(r.n)}</td>${r.m.map(cell).join("")}<td>${ar(r.ch)}</td></tr>`).join("")}</table></div><h2>Learning area mean</h2><div class="scroll"><table><tr><th class="l">Learning area</th>${hd}</tr>${areas.map(a=>`<tr><td class="l">${esc(a)}</td>${S.map(x=>cell(am(x,a))).join("")}</tr>`).join("")}</table></div><h2>Stream mean</h2><div class="scroll"><table><tr><th class="l">Stream</th>${hd}</tr>${strs.map(k=>`<tr><td class="l">${esc(k)}</td>${S.map(x=>cell(sm(x,k))).join("")}</tr>`).join("")}</table></div>`;
+}
+function progressHtml(s){if(!SER)return"";const pg=SER.map(x=>{const t=x.d.st.find(z=>z.name.toLowerCase()===s.name.toLowerCase());return t?esc(x.name)+" "+f1(t.mean)+" ("+gr(t.mean)[1]+")":null}).filter(Boolean);return pg.length>1?`<p class="hint">Progress: ${pg.join(" → ")}</p>`:""}
+$("sv-save").onclick=()=>{try{parse($("data").value)}catch(e){smsg("Fix the marks data before saving: "+e.message);return}const k=curKey(),s=store(),i=s.findIndex(a=>a.key===k),rec={key:k,name:($("exam").value||"").trim()||"Assessment",grade:$("grade").value,data:$("data").value,saved:Date.now()};if(i>-1)s[i]=rec;else s.push(rec);persist();renderStore();$("sv-list").value=k;smsg((i>-1?"Updated ":"Saved ")+rec.grade+" · "+rec.name+". "+s.length+" saved.");analyze()};
+$("sv-open").onclick=()=>{const a=store().find(x=>x.key===$("sv-list").value);if(!a)return;$("data").value=a.data;$("exam").value=a.name;$("grade").value=a.grade;$("bl").checked=gradeNum()<=3;analyze();smsg("Opened "+a.grade+" · "+a.name)};
+$("sv-del").onclick=()=>{const k=$("sv-list").value;if(!k)return;const b=$("sv-del");if(!delArm){delArm=1;b.textContent="Tap again to delete";setTimeout(()=>{delArm=0;b.textContent="Delete"},4000);return}delArm=0;b.textContent="Delete";MEM=store().filter(a=>a.key!==k);persist();renderStore();smsg("Deleted.");analyze()};
+
+$("sv-bak").onclick=()=>{const o={app:"cbc-analytics",v:1,saved:Date.now(),store:store(),school:$("school").value,grade:$("grade").value,exam:$("exam").value,data:$("data").value};const u=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:"application/json"}));const l=document.createElement("a");l.href=u;l.download="cbc-analytics-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);smsg("Backup saved to your Downloads folder.")};
+$("sv-rst").onclick=()=>$("sv-file").click();
+$("sv-file").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(o.app!=="cbc-analytics"||!Array.isArray(o.store))throw new Error("not a backup from this app");if(!confirm("Replace all saved assessments with this backup?"))return;MEM=o.store;persist();if(o.school)$("school").value=o.school;if(o.grade)$("grade").value=o.grade;if(o.exam)$("exam").value=o.exam;if(typeof o.data==="string")$("data").value=o.data;renderStore();analyze();smsg("Backup restored.")}catch(x){smsg("Could not restore: "+x.message)}};r.readAsText(f);e.target.value=""};
+
+function refreshAuto(){if(!window.nativeStore)return;let l=null;try{l=window.nativeStore.lastBackup()}catch(e){}$("sv-auto").hidden=false;$("sv-auto-t").textContent=l?"Automatic backup: last saved "+new Date(l.time).toLocaleString()+" (kept for 30 days).":"Automatic backup: starts once you save an assessment."}
+if(window.nativeStore){$("sv-folder").onclick=()=>window.nativeStore.openFolder();$("sv-save").addEventListener("click",()=>setTimeout(()=>{try{window.nativeStore.backupNow()}catch(e){}refreshAuto()},0));refreshAuto()}
+$("sb-auto").onchange=analyze;
+let SH=null;
+const AREAS={l:["Mathematical Activities","English Language Activities","Kiswahili Language Activities","Environmental Activities","Religious Activities","Creative Activities"],p:["English","Kiswahili","Mathematics","Science and Technology","Social Studies","Agriculture and Nutrition","Creative Arts"],j:["English","Kiswahili","Mathematics","Integrated Science","Social Studies","Pre-Technical Studies","Agriculture"]};
+const emptyRow=()=>({name:"",stream:"",marks:SH.areas.map(()=>""),sba:"",kp:""});
+function sheetFromText(t){
+  const rows=readDelimited(t);
+  const g=gradeNum();
+  if(rows.length<1||rows[0].length<3)return{areas:[...(g<=3?AREAS.l:g<=6?AREAS.p:AREAS.j)],rows:[]};
+  const h=rows[0],si=h.findIndex(x=>/^sba$/i.test(x)),ki=h.findIndex(x=>/^kpsea$/i.test(x));
+  const cols=h.map((_,i)=>i).filter(i=>i>=2&&i!==si&&i!==ki);
+  return{areas:cols.map(i=>h[i]),rows:rows.slice(1).map(r=>({name:r[0]||"",stream:r[1]||"",marks:cols.map(i=>r[i]||""),sba:si>-1?(r[si]||""):"",kp:ki>-1?(r[ki]||""):""}))};
+}
+function renderSheet(){
+  const a=SH.areas;
+  $("sheet").innerHTML=`<div class="row"><div style="flex:0 0 auto"><button id="sh-add">Add learner</button></div><div><label for="sh-area">Add learning area</label><input id="sh-area" placeholder="e.g. Music"></div><div style="flex:0 0 auto"><button class="alt" id="sh-areabtn">Add</button></div></div><div class="row"><div style="flex:0 0 auto"><button id="sh-apply">Apply to analysis</button></div><div style="flex:0 0 auto"><button class="alt" id="sh-new">Start new assessment from this class</button></div><div style="flex:0 0 auto"><button class="alt" id="sh-reload">Reload from data box</button></div></div><p class="hint" id="sh-msg" role="status">Type marks out of 100, or paste a block of cells from Excel. Leave a cell blank if not assessed. Press Enter to move down.</p><div class="scroll sh"><table><tr><th class="l">Name</th><th class="l">Stream</th>${a.map((x,j)=>`<th><input data-h="${j}" value="${esc(x)}" aria-label="Learning area ${j+1}"> <button class="alt" data-xa="${j}" aria-label="Remove ${esc(x)}">×</button></th>`).join("")}<th>SBA</th><th>KPSEA</th><th></th></tr>${SH.rows.map((r,i)=>`<tr><td class="n"><input data-r="${i}" data-c="n" value="${esc(r.name)}" aria-label="Learner name"></td><td><input data-r="${i}" data-c="s" value="${esc(r.stream)}" style="min-width:74px" aria-label="Stream"></td>${r.marks.map((m,j)=>`<td><input inputmode="decimal" data-r="${i}" data-c="${j}" value="${esc(m)}"></td>`).join("")}<td><input inputmode="decimal" data-r="${i}" data-c="b" value="${esc(r.sba)}" aria-label="SBA"></td><td><input inputmode="decimal" data-r="${i}" data-c="k" value="${esc(r.kp)}" aria-label="KPSEA"></td><td><button class="alt" data-xr="${i}" aria-label="Remove learner">×</button></td></tr>`).join("")}</table></div>`;
+}
+const shMsg=t=>{const m=$("sh-msg");if(m)m.textContent=t};
+function setCell(r,c,v){const o=SH.rows[r];if(c==="n")o.name=v;else if(c==="s")o.stream=v;else if(c==="b")o.sba=v;else if(c==="k")o.kp=v;else o.marks[+c]=v}
+function sheetCsv(){
+  const cl=s=>String(s||"").replace(/[,\t\r\n]+/g," ").trim(),rows=SH.rows.filter(r=>cl(r.name));
+  const hb=rows.some(r=>cl(r.sba)!==""),hk=rows.some(r=>cl(r.kp)!=="");
+  return [["Name","Stream",...SH.areas.map(cl),...(hb?["SBA"]:[]),...(hk?["KPSEA"]:[])],...rows.map(r=>[cl(r.name),cl(r.stream),...r.marks.map(cl),...(hb?[cl(r.sba)]:[]),...(hk?[cl(r.kp)]:[])])].map(x=>x.join(",")).join("\n");
+}
+(()=>{
+  const sh=$("sheet");
+  sh.addEventListener("input",e=>{const t=e.target;if(t.dataset.h!==undefined){SH.areas[+t.dataset.h]=t.value;return}if(t.dataset.r!==undefined)setCell(+t.dataset.r,t.dataset.c,t.value)});
+  sh.addEventListener("keydown",e=>{const t=e.target;if(e.key==="Enter"&&t.dataset.r!==undefined){e.preventDefault();const n=sh.querySelector(`input[data-r="${+t.dataset.r+1}"][data-c="${t.dataset.c}"]`);if(n){n.focus();n.select()}}});
+  sh.addEventListener("paste",e=>{
+    const t=e.target,txt=(e.clipboardData||window.clipboardData).getData("text");
+    if(t.dataset.r===undefined||!/[\t\n]/.test(txt.trim()))return;
+    e.preventDefault();
+    const keys=["n","s",...SH.areas.map((_,j)=>String(j)),"b","k"],p=keys.indexOf(t.dataset.c),r0=+t.dataset.r;
+    txt.replace(/\r?\n$/,"").split(/\r?\n/).forEach((line,li)=>{while(SH.rows.length<=r0+li)SH.rows.push(emptyRow());line.split("\t").forEach((v,ci)=>{if(keys[p+ci]!==undefined)setCell(r0+li,keys[p+ci],v.trim())})});
+    renderSheet();shMsg("Pasted. Check the cells, then tap Apply to analysis.");
+  });
+  sh.addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    if(b.dataset.xa!==undefined){const j=+b.dataset.xa;SH.areas.splice(j,1);SH.rows.forEach(r=>r.marks.splice(j,1));renderSheet();return}
+    if(b.dataset.xr!==undefined){SH.rows.splice(+b.dataset.xr,1);renderSheet();return}
+    if(b.id==="sh-add"){SH.rows.push(emptyRow());renderSheet();const i=sh.querySelector(`input[data-r="${SH.rows.length-1}"][data-c="n"]`);if(i)i.focus()}
+    else if(b.id==="sh-areabtn"){const v=$("sh-area").value.trim();if(!v)return;SH.areas.push(v);SH.rows.forEach(r=>r.marks.push(""));renderSheet();shMsg("Added "+v+".")}
+    else if(b.id==="sh-reload"){SH=sheetFromText($("data").value);if(!SH.rows.length)SH.rows=[emptyRow(),emptyRow(),emptyRow()];renderSheet();shMsg("Reloaded from the data box.")}
+    else if(b.id==="sh-new"){SH.rows.forEach(r=>r.marks=SH.areas.map(()=>""));renderSheet();$("exam").value="";$("exam").focus();shMsg("Marks cleared and the class list kept. Name the new assessment in the Assessment box, enter marks, then tap Apply to analysis and Save this assessment.")}
+    else if(b.id==="sh-apply"){const c=sheetCsv();if(c.split("\n").length<2){shMsg("Add at least one learner name first.");return}$("data").value=c;analyze();shMsg("Applied. Review the analysis, then tap Save this assessment.")}
+  });
+  $("sh-toggle").onclick=()=>{
+    if(sh.hidden){SH=sheetFromText($("data").value);if(!SH.rows.length)SH.rows=[emptyRow(),emptyRow(),emptyRow()];renderSheet();sh.hidden=false;$("sh-toggle").textContent="Hide marks sheet"}
+    else{sh.hidden=true;$("sh-toggle").textContent="Marks sheet"}
+  };
+})();
+const csvCell=v=>{if(v===null||v===undefined)return"";let s=String(v);if(typeof v==="string"&&/^[=+\-@\t\r]/.test(s))s="'"+s;return/[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+const r1=x=>Math.round(x*10)/10;
+function csvData(kind){
+  const{subs,st}=D;
+  let rows;
+  if(kind==="compare"){const c=cmp();rows=[["Name",...c.S.map(x=>x.name+" ("+x.grade+")"),"Change (last minus first)"]];c.rows.forEach(r=>rows.push([r.n,...r.m.map(v=>v===null?"":r1(v)),r.ch===null?"":r1(r.ch)]))}else if(kind==="areas"){
+    rows=[["Learning area","Learners assessed","Mean","Level","Highest","Lowest","Meeting expectations % (ME2 and above)"]];
+    subs.forEach((a,i)=>{const v=st.map(s=>s.marks[i]).filter(x=>x!==null);if(v.length)rows.push([a,v.length,r1(avg(v)),gr(avg(v))[1],Math.max(...v),Math.min(...v),Math.round(v.filter(x=>x>=41).length/v.length*100)])});
+  }else if(kind==="streams"){
+    rows=[["Stream","Learners","Mean","Level","Top learner"]];
+    [...new Set(st.map(s=>s.stream))].forEach(k=>{const m=st.filter(s=>s.stream===k),mm=avg(m.map(s=>s.mean));rows.push([k,m.length,r1(mm),gr(mm)[1],[...m].sort((a,b)=>b.total-a.total)[0].name])});
+  }else{
+    rows=[["Name","Stream",...subs,"Total","Mean","Level","Points","Position","Stream position","SBA","KPSEA","Projected final","Projected level"]];
+    [...st].sort((a,b)=>b.total-a.total).forEach(s=>rows.push([s.name,s.stream,...s.marks,s.total,r1(s.mean),s.g[1],s.pts,s.r_total,streamPos(s).split("/")[0],s.sba,s.kp,s.fin===null?"":r1(s.fin),s.fg?s.fg[1]:""]));
+  }
+  return rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
+}
+const slug=t=>String(t||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+const csvName=k=>[slug($("school").value),slug($("grade").value),slug($("exam").value),k==="areas"?"learning-areas":k==="streams"?"streams":k==="compare"?"comparison":"learners"].filter(Boolean).join("-")+".csv";
+const say=t=>{$("ex-msg").textContent=t};
+async function exportCsv(){
+  if(!D)return;
+  const kind=$("ex-what").value,name=csvName(kind),data="\ufeff"+csvData(kind);
+  let dl=null;
+  try{dl=window.claude?await window.claude.use("downloads"):null}catch(e){}
+  if(dl){
+    try{await dl.save({filename:name,data});say("Saved "+name);return}
+    catch(e){if(e&&e.code==="declined"){say("Export cancelled.");return}}
+  }
+  try{
+    const file=new File([data],name,{type:"text/csv"});
+    if(window.Capacitor&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});say("Shared "+name);return}
+    const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    say("Download started: "+name+". If nothing downloads, use Copy CSV.");
+  }catch(e){say("Could not start a download. Use Copy CSV instead.")}
+}
+$("ex-csv").onclick=exportCsv;
+$("ex-copy").onclick=()=>{if(!D)return;const t=csvData($("ex-what").value),ok=()=>say("CSV copied. Paste it into Excel or Google Sheets.");try{navigator.clipboard.writeText(t).then(ok,()=>fb(t,ok))}catch(e){fb(t,ok)}};
+$("pa-print").onclick=()=>{
+  const b=document.body;
+  $("pahead").innerHTML=`<img src="${LOGO}" alt=""><div><h1>${esc($("school").value||"School")} · ${esc($("grade").value)} · ${esc($("exam").value||"Assessment")}</h1><p>${MOTTO} · Results analysis · ${new Date().toLocaleDateString()}</p></div>`;
+  b.classList.add("pa");
+  const done=()=>{b.classList.remove("pa");window.removeEventListener("afterprint",done)};
+  window.addEventListener("afterprint",done);
+  try{window.print()}catch(e){done()}
+};
+$("brand-logo").src=LOGO;$("go").onclick=analyze;$("school").oninput=renderReports;$("exam").oninput=renderReports;$("rk").onchange=analyze;$("grade").onchange=()=>{$("bl").checked=gradeNum()<=3;analyze()};
+$("sample").onclick=()=>{const g=gradeNum();$("data").value=g<=3?SAMPLE_L:g<=6?SAMPLE_P:SAMPLE;analyze()};
+try{$("data").value=KV.get("ra-data-jss2")||SAMPLE}catch(e){$("data").value=SAMPLE}
+analyze();
+</script>
+</body>
+</html>
