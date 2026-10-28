@@ -1,24 +1,21 @@
 name: Build CBC School Assessment for Windows
 
-on:
-workflow_dispatch:
+on:workflow_dispatch:
 push:
 branches:
 - main
 
-jobs:
-build-windows:
+jobs:build-windows:
 runs-on: windows-latest
 
 steps:
-  - name: Download project files
+  - name: Checkout repository
     uses: actions/checkout@v4
 
-  - name: Install Node.js
+  - name: Set up Node.js
     uses: actions/setup-node@v4
     with:
       node-version: 20
-      cache: npm
 
   - name: Install dependencies
     run: npm install
@@ -29,6 +26,6 @@ steps:
   - name: Upload installer
     uses: actions/upload-artifact@v4
     with:
-      name: CBC-School-Assessment-Windows-Installer
+      name: CBC-School-Assessment-Installer
       path: dist/*.exe
       if-no-files-found: error
