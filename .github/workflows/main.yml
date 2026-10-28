@@ -1,11 +1,13 @@
 name: Build CBC School Assessment for Windows
 
-on:workflow_dispatch:
+"on":
+workflow_dispatch:
 push:
 branches:
 - main
 
-jobs:build-windows:
+jobs:
+build-windows:
 runs-on: windows-latest
 
 steps:
